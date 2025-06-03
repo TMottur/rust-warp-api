@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use warp::http::StatusCode;
+use tracing::{instrument, info};
 
 use crate::store::Store;
 use crate::types::pagination::extract_pagination;
@@ -20,16 +21,20 @@ pub async fn add_question(
     Ok(warp::reply::with_status("Question added", StatusCode::OK))
 }
 
+#[instrument]
 pub async fn get_questions(
     params: HashMap<String, String>,
     store: Store,
 ) -> Result<impl Reply, Rejection> {
+    info!("querying questions");
     if !params.is_empty() {
         let pagination = extract_pagination(params)?;
+        info!(pagination = true);
         let res: Vec<Question> = store.questions.read().await.values().cloned().collect();
         let res = &res[pagination.start..pagination.end];
         Ok(warp::reply::json(&res))
     } else {
+        info!(pagination = false);
         let res: Vec<Question> = store.questions.read().await.values().cloned().collect();
         Ok(warp::reply::json(&res))
     }

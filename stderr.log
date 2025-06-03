@@ -1,0 +1,20 @@
+2025-06-02T21:48:32.664720-04:00 - This is an error!
+2025-06-02T21:48:32.664794-04:00 - This is info!
+2025-06-02T21:48:32.664815-04:00 - This is a warning!
+2025-06-02T21:48:32.666005-04:00 - Server::run; addr=127.0.0.1:3030
+2025-06-02T21:48:32.666049-04:00 - listening on http://127.0.0.1:3030
+2025-06-02T21:50:00.913851-04:00 - parsed 3 headers
+2025-06-02T21:50:00.913897-04:00 - incoming body is empty
+2025-06-02T21:50:00.913956-04:00 - route was called without a query string, defaulting to empty
+2025-06-02T21:50:00.914119-04:00 - flushed 179 bytes
+2025-06-02T21:50:00.914354-04:00 - read eof
+2025-06-02T22:06:18.245205-04:00 - This is an error!
+2025-06-02T22:06:18.245366-04:00 - This is info!
+2025-06-02T22:06:18.245378-04:00 - This is a warning!
+2025-06-02T22:06:18.246093-04:00 - Server::run; addr=127.0.0.1:3030
+2025-06-02T22:06:18.246124-04:00 - listening on http://127.0.0.1:3030
+{"time":"2025-06-02T22:19:33.078705-04:00","level":"ERROR","message":"This is an error!","module_path":"rust_web","file":"src/main.rs","line":14,"target":"rust_web","thread":"main","thread_id":4028854,"mdc":{}}
+{"time":"2025-06-02T22:19:33.078748-04:00","level":"INFO","message":"This is info!","module_path":"rust_web","file":"src/main.rs","line":15,"target":"rust_web","thread":"main","thread_id":4028854,"mdc":{}}
+{"time":"2025-06-02T22:19:33.078771-04:00","level":"WARN","message":"This is a warning!","module_path":"rust_web","file":"src/main.rs","line":16,"target":"rust_web","thread":"main","thread_id":4028854,"mdc":{}}
+{"time":"2025-06-02T22:19:33.079508-04:00","level":"INFO","message":"Server::run; addr=127.0.0.1:3030","module_path":"warp::server","file":"/Users/tommymottur/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/warp-0.3.7/src/server.rs","line":137,"target":"warp::server","thread":"main","thread_id":4028854,"mdc":{}}
+{"time":"2025-06-02T22:19:33.079556-04:00","level":"INFO","message":"listening on http://127.0.0.1:3030","module_path":"warp::server","file":"/Users/tommymottur/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/warp-0.3.7/src/server.rs","line":138,"target":"warp::server","thread":"main","thread_id":4028854,"mdc":{}}
