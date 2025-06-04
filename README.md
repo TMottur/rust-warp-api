@@ -17,7 +17,7 @@ A learning project inspired by Bastian Gruber’s *Rust Web Programming*, this A
 
 ## 🛠 Project Structure
 
-\```
+```
 ├── src/
 │   ├── main.rs          # Entry point: initializes the server and routes
 │   ├── routes.rs        # Defines API routes and filters
@@ -26,7 +26,7 @@ A learning project inspired by Bastian Gruber’s *Rust Web Programming*, this A
 │   └── store.rs         # In-memory data store implementation
 ├── Cargo.toml           # Project metadata and dependencies
 └── README.md            # Project overview and instructions
-\```
+```
 
 ---
 
@@ -44,16 +44,16 @@ A learning project inspired by Bastian Gruber’s *Rust Web Programming*, this A
 
 1. **Clone the repository**:
 
-\```bash
+```bash
 git clone https://github.com/TMottur/rust-warp-api.git
 cd rust-warp-api
-\```
+```
 
 2. **Build and run the server**:
 
-\```bash
+```bash
 cargo run
-\```
+```
 
 The server will start on `http://localhost:3030`.
 
@@ -75,31 +75,31 @@ Each endpoint expects and returns JSON-formatted data.
 
 **Create a new item**:
 
-\```bash
+```bash
 curl -X POST http://localhost:3030/items \
      -H "Content-Type: application/json" \
      -d '{"name": "Sample Item", "description": "This is a test item."}'
-\```
+```
 
 **Retrieve all items**:
 
-\```bash
+```bash
 curl http://localhost:3030/items
-\```
+```
 
 **Update an item**:
 
-\```bash
+```bash
 curl -X PUT http://localhost:3030/items/{id} \
      -H "Content-Type: application/json" \
      -d '{"name": "Updated Item", "description": "Updated description."}'
-\```
+```
 
 **Delete an item**:
 
-\```bash
+```bash
 curl -X DELETE http://localhost:3030/items/{id}
-\```
+```
 
 ---
 
