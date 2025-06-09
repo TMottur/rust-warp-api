@@ -21,7 +21,7 @@ async fn main() {
     sqlx::migrate!()
         .run(&store.clone().connection)
         .await
-        .expect("Cannot run migrations");
+        .expect("Failed to migrate");
 
     let store_filter = warp::any().map(move || store.clone());
 
@@ -79,11 +79,19 @@ async fn main() {
         .and(warp::body::form())
         .and_then(routes::answer::add_answer);
 
+    let registration = warp::post()
+            .and(warp::path("registration"))
+            .and(warp::path::end())
+            .and(store_filter.clone())
+            .and(warp::body::json())
+            .and_then(routes::authentication::register);
+
     let routes = get_questions
         .or(update_question)
         .or(add_question)
         .or(delete_question)
         .or(add_answer)
+        .or(registration)
         .with(cors)
         .with(warp::trace::request())
         .recover(return_error);

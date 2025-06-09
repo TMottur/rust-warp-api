@@ -6,6 +6,7 @@ use handle_errors::Error;
 use crate::types::{
     answer::{Answer, AnswerId, NewAnswer},
     question::{NewQuestion, Question, QuestionId},
+    account::Account,
 };
 
 #[derive(Debug, Clone)]
@@ -29,6 +30,40 @@ impl Store {
         }
     }
 
+    pub async fn add_account(self, account: Account) -> Result<bool, Error> {
+        match sqlx::query("INSERT INTO accounts (email, password)
+            VALUES ($1, $2)")
+            .bind(account.email)
+            .bind(account.password)
+            .execute(&self.connection)
+            .await
+        {
+            Ok(_) => Ok(true),
+            Err(error) => {
+                tracing::event!(
+                    tracing::Level::ERROR,
+                    code = error
+                        .as_database_error()
+                        .unwrap()
+                        .code()
+                        .unwrap()
+                        .parse::<i32>()
+                        .unwrap(),
+                    db_message = error
+                        .as_database_error()
+                        .unwrap()
+                        .message(),
+                    constraint = error
+                        .as_database_error()
+                        .unwrap()
+                        .constraint()
+                        .unwrap()
+                );
+                Err(Error::DatabaseQueryError(error))
+            }
+        }
+    }
+
     pub async fn get_questions(
         self,
         limit: Option<i32>,
@@ -49,7 +84,7 @@ impl Store {
             Ok(questions) => Ok(questions),
             Err(e) => {
                 tracing::event!(tracing::Level::ERROR, "{:?}", e);
-                Err(Error::DatabaseQueryError)
+                Err(Error::DatabaseQueryError(error))
             }
         }
     }
@@ -73,7 +108,7 @@ impl Store {
                 Ok(question) => Ok(question),
                 Err(e) => {
                     tracing::event!(tracing::Level::ERROR, "{:?}", e);
-                    Err(Error::DatabaseQueryError)
+                    Err(Error::DatabaseQueryError(error))
                 },
             }
     }
@@ -104,7 +139,7 @@ impl Store {
             Ok(question) => Ok(question),
             Err(e) => {
                 tracing::event!(tracing::Level::ERROR, "{:?}", e);
-                Err(Error::DatabaseQueryError)
+                Err(Error::DatabaseQueryError(error))
             }
         }
     }
@@ -118,7 +153,7 @@ impl Store {
             Ok(_) => Ok(true),
             Err(e) => {
                 tracing::event!(tracing::Level::ERROR, "{:?}", e);
-                Err(Error::DatabaseQueryError)
+                Err(Error::DatabaseQueryError(error))
             }
         }
     }
@@ -143,7 +178,7 @@ impl Store {
             Ok(answer) => Ok(answer),
             Err(e) => {
                 tracing::event!(tracing::Level::ERROR, "{:?}", e);
-                Err(Error::DatabaseQueryError)
+                Err(Error::DatabaseQueryError(error))
             }
         }
     }

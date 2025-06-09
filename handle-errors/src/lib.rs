@@ -13,11 +13,11 @@ use reqwest_middleware::Error as MiddlewareReqwestError;
 pub enum Error {
     ParseError(std::num::ParseIntError),
     MissingParameters,
-    DatabaseQueryError,
+    DatabaseQueryError(sqlx::Error),
     ReqwestAPIError(ReqwestError),
     MiddlewareReqwestAPIError(MiddlewareReqwestError),
     ClientError(APILayerError),
-    ServerError(APILayerError)
+    ServerError(APILayerError),
 }
 
 #[derive(Debug, Clone)]
@@ -37,7 +37,7 @@ impl std::fmt::Display for Error {
         match &*self {
             Error::ParseError(ref err) => write!(f, "Cannot parse parameter: {}", err),
             Error::MissingParameters => write!(f, "Missing parameter"),
-            Error::DatabaseQueryError => write!(f, "Cannot update, invalid data."),
+            Error::DatabaseQueryError(_) => write!(f, "Cannot update, invalid data."),
             Error::ReqwestAPIError(err) => write!(f, "External API error: {}", err),
             Error::MiddlewareReqwestAPIError(err) => write!(f, "External API error: {}", err),
             Error::ClientError(err) => write!(f, "External Client error: {}", err),
@@ -49,21 +49,55 @@ impl std::fmt::Display for Error {
 impl Reject for Error {}
 impl Reject for APILayerError {}
 
+const DUPLICATE_KEY: u32 = 23505;
+
 #[instrument]
 pub async fn return_error(r: Rejection) -> Result<impl Reply, Rejection> {
-    if let Some(crate::Error::DatabaseQueryError) = r.find() {
+    if let Some(crate::Error::DatabaseQueryError(e)) = r.find() {
         event!(Level::ERROR, "Database query error");
-        Ok(warp::reply::with_status(
-            crate::Error::DatabaseQueryError.to_string(),
-            StatusCode::UNPROCESSABLE_ENTITY,
-        ))
+
+        match e {
+            sqlx::Error::Database(err) => {
+                if err.code().unwrap().parse::<u32>().unwrap()
+                    == DUPLICATE_KEY
+                {
+                    Ok(warp::reply::with_status(
+                        "Account already exsists".to_string(),
+                        StatusCode::UNPROCESSABLE_ENTITY,
+                    ))
+                } else {
+                    Ok(warp::reply::with_status(
+                        "Cannot update data".to_string(),
+                        StatusCode::UNPROCESSABLE_ENTITY,
+                    ))
+                }
+            }
+            _ => Ok(warp::reply::with_status(
+                "Cannot update data".to_string(),
+                StatusCode::UNPROCESSABLE_ENTITY,
+            )),
+        }
     } else if let Some(crate::Error::ReqwestAPIError(e)) = r.find() {
         event!(Level::ERROR, "{}", e);
         Ok(warp::reply::with_status(
             "Internal Server Error".to_string(),
             StatusCode::INTERNAL_SERVER_ERROR,
         ))
-    } else if let Some(crate::Error::MiddlewareReqwestAPIError(e)) = r.find() {
+    } else if let Some(crate::Error::Unauthorized) = r.find() {
+        event!(Level::ERROR, "Not matching account id");
+        Ok(warp::reply::with_status(
+            "No permission to change underlying resource".to_string(),
+            StatusCode::UNAUTHORIZED,
+        ))
+    } else if let Some(crate::Error::WrongPassword) = r.find() {
+        event!(Level::ERROR, "Entered wrong password");
+        Ok(warp::reply::with_status(
+            "Wrong E-Mail/Password combination".to_string(),
+            StatusCode::UNAUTHORIZED,
+        ))
+    } else if let Some(crate::Error::MiddlewareReqwestAPIError(e)) =
+        r.find()
+    {
         event!(Level::ERROR, "{}", e);
         Ok(warp::reply::with_status(
             "Internal Server Error".to_string(),
@@ -88,7 +122,11 @@ pub async fn return_error(r: Rejection) -> Result<impl Reply, Rejection> {
             StatusCode::FORBIDDEN,
         ))
     } else if let Some(error) = r.find::<BodyDeserializeError>() {
-        event!(Level::ERROR, "Cannot deserizalize request body: {}", error);
+        event!(
+            Level::ERROR,
+            "Cannot deserizalize request body: {}",
+            error
+        );
         Ok(warp::reply::with_status(
             error.to_string(),
             StatusCode::UNPROCESSABLE_ENTITY,
@@ -98,7 +136,7 @@ pub async fn return_error(r: Rejection) -> Result<impl Reply, Rejection> {
         Ok(warp::reply::with_status(
             error.to_string(),
             StatusCode::UNPROCESSABLE_ENTITY,
-        )) 
+        ))
     } else {
         event!(Level::WARN, "Requested route was not found");
         Ok(warp::reply::with_status(
