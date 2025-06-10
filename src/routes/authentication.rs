@@ -71,7 +71,7 @@ pub fn verify_token(
 }
 
 fn hash_password(password: &[u8]) -> String {
-    let salt = rand::thread_rng().gen::<[u8; 32]>();
+    let salt = rand::thread_rng().r#gen::<[u8; 32]>();
     let config = Config::default();
     argon2::hash_encoded(password, &salt, &config).unwrap()
 }
