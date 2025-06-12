@@ -1,22 +1,52 @@
 #![warn(clippy::all)]
 
+use config::Config;
 use handle_errors::return_error;
 use tracing_subscriber::fmt::format::FmtSpan;
 use warp::{http::Method, Filter};
+use clap::Parser;
 
 mod profanity;
 mod routes;
 mod store;
 mod types;
 
+#[derive(Parser, Debug, Default, serde::Deserialize, PartialEq)]
+struct Args {
+    log_level: String,
+    /// URL for the postgres database
+    database_host: String,
+    /// PORT number for the database connection
+    database_port: u16,
+    /// Database name
+    database_name: String,
+    /// Web server port
+    port: u16,
+}
+
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), sqlx::Error> {
+    let config = Config::builder()
+        .add_source(config::File::with_name("setup"))
+        .build()
+        .unwrap();
+
+    let config = config
+        .try_deserialize::<Args>()
+        .unwrap();
+
     let log_filter = std::env::var("RUST_LOG").unwrap_or_else(|_| {
-        "handle_errors=warn,practical_rust_book=warn,warp=warn".to_owned()
+        format!(
+            "handle_errors={},rust_web={},warp={}",
+            config.log_level, config.log_level, config.log_level
+        )
     });
 
     let store =
-        store::Store::new("postgres://localhost:5432/rustwebdev").await;
+        store::Store::new(&format!(
+            "postgres://{}:{}/{}",
+            config.database_host, config.database_port, config.database_name
+        )).await;
 
     sqlx::migrate!()
         .run(&store.clone().connection)
@@ -108,5 +138,10 @@ async fn main() {
         .with(warp::trace::request())
         .recover(return_error);
 
-    warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
+    tracing::info!("Q&A service build ID {:?}", std::env::var("RUST_WEB_DEV_VERSION"));
+
+    warp::serve(routes).run(([127, 0, 0, 1], config.port)).await;
+
+    Ok(())
+
 }

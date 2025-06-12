@@ -1,6 +1,6 @@
 [package]
 name = "rust-web"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2024"
 
 [dependencies]
@@ -23,3 +23,8 @@ rand = { version = "0.8", features = ["std"] }
 rust-argon2 = "1.0"
 paseto = "2.0"
 chrono = "0.4.19"
+config = { version = "0.13.1", features = ["toml"] }
+clap = { version = "4", features = ["derive"] }
+
+[build-dependencies]
+platforms = "2.0.0"
