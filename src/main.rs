@@ -5,6 +5,8 @@ use handle_errors::return_error;
 use tracing_subscriber::fmt::format::FmtSpan;
 use warp::{http::Method, Filter};
 use clap::Parser;
+use std::env;
+use std::env::args;
 
 mod profanity;
 mod routes;
@@ -14,18 +16,24 @@ mod types;
 #[derive(Parser, Debug, Default, serde::Deserialize, PartialEq)]
 struct Args {
     log_level: String,
+    /// Which PORT the server is listening to
+    #[clap(short, long, default_value = "8080")]
+    port: u16,
+    /// Database user
+    #[clap(long, default_value = "user")]
+    db_user: String,
     /// URL for the postgres database
     database_host: String,
     /// PORT number for the database connection
     database_port: u16,
     /// Database name
     database_name: String,
-    /// Web server port
-    port: u16,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), sqlx::Error> {
+    dotenv::dotenv().ok();
+    
     let config = Config::builder()
         .add_source(config::File::with_name("setup"))
         .build()
@@ -34,6 +42,16 @@ async fn main() -> Result<(), sqlx::Error> {
     let config = config
         .try_deserialize::<Args>()
         .unwrap();
+
+    let db_user = env::var("POSTGRES_USER")
+        .unwrap_or(config.db_user.to_owned());
+    let db_password = env::var("POSTGRES_PASSWORD").unwrap();
+    let db_host = env::var("POSTGRES_HOST")
+        .unwrap_or(config.database_host.to_owned());
+    let db_port = env::var("POSTGRES_PORT")
+        .unwrap_or(config.database_port.to_string());
+    let db_name = env::var("POSTGRES_DB")
+        .unwrap_or(config.database_name.to_owned());
 
     let log_filter = std::env::var("RUST_LOG").unwrap_or_else(|_| {
         format!(
@@ -44,8 +62,8 @@ async fn main() -> Result<(), sqlx::Error> {
 
     let store =
         store::Store::new(&format!(
-            "postgres://{}:{}/{}",
-            config.database_host, config.database_port, config.database_name
+            "postgres://{}:{}@{}:{}/{}",
+            db_user, db_password, db_host, db_port, db_name
         )).await;
 
     sqlx::migrate!()
