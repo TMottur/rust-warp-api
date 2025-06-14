@@ -3,6 +3,7 @@ use reqwest_retry::{
     policies::ExponentialBackoff, RetryTransientMiddleware,
 };
 use serde::{Deserialize, Serialize};
+use std::env;
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct APIResponse {
@@ -27,7 +28,7 @@ struct BadWordsResponse {
     censored_content: String,
 }
 
-#[instrument]
+
 pub async fn check_profanity(
     content: String,
 ) -> Result<String, handle_errors::Error> {
@@ -89,7 +90,7 @@ mod profanity_tests {
     async fn run() {
         let handler = run_mock();
         censor_profane_words().await;
-        no_profane_words().await();
+        no_profane_words().await;
         let _ = handler.sender.send(1);
     }
 
@@ -97,7 +98,7 @@ mod profanity_tests {
         env::set_var("API_LAYER_URL", "http://127.0.0.1:3030");
         env::set_var("BAD_WORDS_API_KEY", "YES");
 
-        let socker = "127.0.0.1:3030"
+        let socket = "127.0.0.1:3030"
             .to_string()
             .parse()
             .expect("Not a valid address");
