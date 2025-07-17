@@ -11,6 +11,7 @@ RUN rm -rf src
 
 # Copy actual source
 COPY . .
+ENV SQLX_OFFLINE=true
 RUN cargo build --release
 
 # Stage 2: Runtime
